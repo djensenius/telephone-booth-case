@@ -6,31 +6,36 @@ art project. It is a two-bay, snap-fit case that houses:
 - **Back bay** — Raspberry Pi 4B + 52Pi GPIO Screw Terminal HAT, with a Noctua
   NF-A4x20 fan mounted on the lid.
 - **Front bay** — GL.iNet MUDI 7 (GL-E5800) travel router, lying flat screen-up in
-  a cradle so the screen shows through the lid window and the power button is
-  reachable from the front wall.
+  a cradle so the screen shows through the lid window. The cradle rests on tapered
+  support pillars that reduce print stringing.
 
-Internal wiring runs between the bays through a passage in the central divider:
-external USB-C inlet → router power in, router PD out → Pi power, router Ethernet →
-Pi Ethernet. Two panel RJ45 jacks wire to the 52Pi HAT (GPIO).
+Internal wiring runs between the bays through the central divider, which is left
+open on the router's left end so the router's ethernet door can swing open and the
+power cable can reach the Pi. Power path: external USB-C inlet → router power in;
+the router's USB-out feeds the Pi via a right-angle USB dongle (the reason the
+router bay has extra room on that end). Two panel RJ45 keystones wire to the 52Pi
+HAT (GPIO).
 
-Current embossed version: **v.0.1**
+Current embossed version: **v.0.2**
 
 ## Components
 
 Parts the case is designed around (official product pages where available, Amazon
-otherwise). Panel-mount connectors are representative examples — verify cutout
-dimensions before a final print.
+otherwise). Panel-cutout dimensions are matched by measurement to the specific
+parts linked below — swapping a part may require adjusting the model.
 
-| Component | Where it goes | Link |
-| --- | --- | --- |
-| Raspberry Pi 4 Model B | Back bay | [raspberrypi.com](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) |
-| 52Pi GPIO Screw Terminal HAT (EP-01129) | On the Pi | [52pi.com](https://52pi.com/products/52pi-gpio-screw-terminal-hat-for-raspberry-pi) |
-| GL.iNet MUDI 7 (GL-E5800) 5G travel router | Front bay | [gl-inet.com](https://www.gl-inet.com/products/gl-e5800/) |
-| Noctua NF-A4x20 40 mm fan | Lid | [noctua.at](https://noctua.at/en/nf-a4x20-flx) |
-| Round USB 3.0 panel-mount bulkhead, 86-type ⌀22 mm (2-pack) | Back wall | [Amazon.ca](https://www.amazon.ca/dp/B0F2MW7XXZ) |
-| USB-C 3.1 panel-mount coupler, rectangular flange | Router-bay right wall (power inlet) | [Amazon.ca](https://www.amazon.ca/dp/B0GF22WM9T) |
-| HDMI female → micro-HDMI panel-mount extension | Right wall | [Amazon.ca](https://www.amazon.ca/dp/B0DHK3RN81) |
-| RJ45 CAT6 panel-mount coupler (×2, GPIO) | Left wall | [Amazon.ca](https://www.amazon.ca/dp/B071FNHVXN) |
+| Component | Where it goes | Cutout | Link |
+| --- | --- | --- | --- |
+| Raspberry Pi 4 Model B | Back bay | 58 × 49 mm hole pattern | [raspberrypi.com](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) |
+| 52Pi GPIO Screw Terminal HAT (EP-01129) | On the Pi | — | [52pi.com](https://52pi.com/products/52pi-gpio-screw-terminal-hat-for-raspberry-pi) |
+| GL.iNet MUDI 7 (GL-E5800) 5G travel router | Front bay | cradle | [gl-inet.com](https://www.gl-inet.com/products/gl-e5800/) |
+| Noctua NF-A4x20 40 mm fan | Lid | ⌀37 mm grille, 32 mm screws | [noctua.at](https://noctua.at/en/nf-a4x20-flx) |
+| Round USB 3.0 panel-mount bulkhead, 86-type (×2) | Back wall (→ Pi USB-A) | ⌀22.6 mm round | [Amazon.ca](https://www.amazon.ca/dp/B0F2MW7XXZ) |
+| USB-C 3.1 panel-mount coupler | Router-bay right wall (power inlet) | 13 × 8 mm, 23.5 mm screws | [Amazon.ca](https://www.amazon.ca/dp/B0GF22WM9T) |
+| HDMI female → micro-HDMI panel-mount waterproof bulkhead | Right wall (→ Pi micro-HDMI) | ⌀21.5 mm round, 21 mm thread | [Amazon.ca](https://www.amazon.ca/dp/B0CB7HW11X) |
+| RJ45 CAT6 keystone panel-mount (×2, GPIO) | Left wall | 16.5 × 13.1 mm, 24.5 mm screws | [Amazon.ca](https://www.amazon.ca/dp/B071FNHVXN) |
+| Rugged metal RGB pushbutton, 16 mm (Pi power) | Right wall | ⌀16 mm round | [adafruit.com](https://www.adafruit.com/product/3350) |
+| Right-angle USB-A → USB-A cable, 30 cm | Router USB-out → Pi power | — (internal) | — |
 
 Fasteners: M2.5 screws for the Pi standoffs (driven up from the underside); the
 Noctua fan ships with its own self-tapping screws.
@@ -40,10 +45,11 @@ Noctua fan ships with its own self-tapping screws.
 | File | Part | Description |
 | --- | --- | --- |
 | [`telephone-booth-case.scad`](telephone-booth-case.scad) | Source | Parametric OpenSCAD model (all dimensions live here) |
-| [`base.stl`](base.stl) | Base | Two-bay body with standoffs, cradle, panel cutouts and vents |
+| [`base.stl`](base.stl) | Base | Two-bay body with standoffs, cradle + tapered supports, panel cutouts and vents |
 | [`lid.stl`](lid.stl) | Lid | Snap-fit lid with fan grille and router screen window |
 
-Outer size: **~164.8 × 185.6 × 43.8 mm**. Both parts are embossed with the version.
+Outer size: **~175.3 × 220.6 × 43.8 mm**. Both parts are embossed with the version,
+author (David Jensenius) and contact (david@jensenius.com).
 
 ## Previews
 
@@ -53,6 +59,9 @@ Outer size: **~164.8 × 185.6 × 43.8 mm**. Both parts are embossed with the ver
 | ![Interior](previews/2_interior_iso.png) | Interior, both bays |
 | ![Assembled lid](previews/3_assembled_lid.png) | Assembled — fan grille + screen window |
 | ![Underside](previews/4_assembled_under.png) | Assembled underside |
+| ![Interior router end](previews/5_interior_router_end.png) | Interior from the router (USB-C) end — cradle supports |
+| ![Interior dongle end](previews/6_interior_dongle_end.png) | Interior from the dongle end — divider opened for cabling |
+| ![Interior rear](previews/7_interior_rear.png) | Interior from the rear — cradle supports + left stops |
 | ![Base label](previews/label_base.png) | Embossed label on the base front wall |
 | ![Lid label](previews/label_lid.png) | Embossed label on the lid top |
 
