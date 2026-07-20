@@ -246,10 +246,12 @@ module pi_standoff_holes() {
 }
 
 // USB audio adapter cradle: two U-channel ribs (spanning the body's width in Y,
-// thin in X) joined by a thin floor strap, sitting just behind the Pi board in
-// the rear cable zone. The body drops in from the top and is lightly captured by
+// thin in X) joined by a thin floor strap. Sits along the BACK wall (the wall
+// with the USB bulkhead), near the USB hole, matching where the US205 rests in
+// the assembly photos. The body drops in from the top and is lightly captured by
 // an inward lip at each rib's mouth.
-aud_yc = board_absy + board_y + 6 + aud_wid/2;   // centre Y, just behind the board
+aud_back_gap = 6;   // clearance from the back-wall inner face to the cradle's rear
+aud_yc = (OUTY - wall) - aud_back_gap - (aud_wid/2 + aud_wall);   // centre Y, hard against the back wall
 
 module audio_rib() {
     top = aud_floor + aud_slot_d;
