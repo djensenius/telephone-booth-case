@@ -51,13 +51,18 @@ rt_thk = 22.8;      // Z
 rt_clr = 1.5;       // fit clearance around the body
 ledge_w = 4;        // cradle ledge that the router rests on
 ledge_t = 2.4;      // ledge thickness
+dongle_gap = 10.5;  // clearance on router's LEFT end for a right-angle USB dongle
+
+/* [Cradle supports] */
+sup_top_w = 12;     // support cap length along the rim (meets the ledge)
+sup_foot  = 3;      // tapered support foot at the floor (less bridging -> less stringing)
 
 /* [Bay layout] */
 pi_front  = 12;     // board gap toward the divider
-pi_back   = 30;     // deep zone behind board for connector plugs/cables
+pi_back   = 65;     // deep zone behind board: right-angle USB-A plugs + flat-cable routing
 pocket_x  = rt_len + 2*rt_clr;         // router pocket X
 pocket_y  = rt_wid + 2*rt_clr;         // router pocket Y
-IX        = max(pocket_x, board_x + 40);   // shared cavity width
+IX        = max(pocket_x + dongle_gap, board_x + 40);   // shared cavity width (incl. dongle gap)
 pi_bay_y  = board_y + pi_front + pi_back;  // Pi bay depth
 
 inner_h = standoff_h + board_th + stack_h + roof_gap;   // cavity height
@@ -87,11 +92,15 @@ vent_slot_w = 3;
 vent_slot_h = 9;
 vent_gap    = 4;
 
-/* [USB round hole] */
-usb_hole_d = 22.6;  // 86-type threaded USB bulkhead
+/* [Panel round holes] */
+usb_hole_d  = 22.6;  // 86-type threaded USB bulkhead
+hdmi_hole_d = 21.5;  // panel-mount waterproof HDMI bulkhead (21 mm thread, cut Ø21.5)
+btn_hole_d  = 16;    // 16 mm rugged metal RGB pushbutton (Adafruit 3350) - Pi power
 
 /* [Emboss label] */
-label       = "Telephone Booth Case v.0.1";
+label       = "Telephone Booth Case v.0.2";
+author      = "David Jensenius";
+contact     = "david@jensenius.com";
 emboss_h    = 0.8;  // raised height
 lid_txt_sz  = 6;    // lid top face
 wall_txt_sz = 4.5;  // base front wall
@@ -113,19 +122,26 @@ pi_cav_y1     = pi_cav_y0 + pi_bay_y;    // Pi cavity back
 board_absx = wall + (IX - board_x)/2;
 board_absy = pi_cav_y0 + pi_front;
 
+// Router pocket left origin: the dongle gap sits to its left (min-X end).
+rt_x0 = wall + dongle_gap;
+
 // Divider cable passage (central, full height) for router<->Pi wiring.
 // Router is retained by the pocket walls + cradle rim on its other 3 sides,
 // so the divider only needs short end stubs; a wide passage gives the
 // internal power/Ethernet cables plenty of room to route between bays.
-pass_margin = 25;   // solid divider stub left at each end
+pass_margin = 25;   // solid divider stub kept near the USB-C (right/max-X) end
+open_left   = true; // remove the divider on the LEFT end so the router ethernet
+                    // door can open and the dongle power cable can reach the Pi
 
 // Snap X positions (front/back walls) - clear of the connectors.
 snap_positions = [ OUTX*0.12, OUTX*0.50, OUTX*0.88 ];
 
 // Fan + screen centres.
+// Fan centred over the Pi board (not the bay) so it keeps cooling the SoC
+// regardless of how deep the rear cable zone is.
 fan_cx = wall + IX/2;
-fan_cy = pi_cav_y0 + pi_bay_y/2;
-scr_cx = wall + pocket_x/2;
+fan_cy = board_absy + board_y/2;
+scr_cx = rt_x0 + pocket_x/2;
 scr_cy = wall + pocket_y/2;
 
 // ============================================================================
@@ -138,15 +154,19 @@ panel_holes = [
     // Pi bay - BACK wall: two round USB 3.0 bulkheads (-> Pi USB-A).
     [ "back",  "circ", usb_hole_d, 0,  50, 26, 0,  0   ],
     [ "back",  "circ", usb_hole_d, 0, 110, 26, 0,  0   ],
-    // Pi bay - LEFT wall: two RJ45 Ethernet for GPIO (-> 52Pi HAT). VERIFY.
-    [ "left",  "rect", 16.5, 17, 108, 26, 20, 3.2 ],
-    [ "left",  "rect", 16.5, 17, 150, 26, 20, 3.2 ],
-    // Pi bay - RIGHT wall: HDMI (Pi video out). VERIFY.
-    [ "right", "rect", 22, 15, 140, 24, 24, 3.0 ],
+    // Pi bay - LEFT wall: two RJ45 Ethernet keystones (-> 52Pi HAT GPIO).
+    // Screw-mount breakout: 16.5 x 13.1 mm port window, screws 24.5 mm apart,
+    // body ~37 mm deep into the bay (clears the Pi board; see note below).
+    [ "left",  "rect", 16.5, 13.1, 108, 26, 24.5, 3.2 ],
+    [ "left",  "rect", 16.5, 13.1, 150, 26, 24.5, 3.2 ],
+    // Pi bay - RIGHT wall: panel-mount HDMI bulkhead (micro-HDMI -> Pi).
+    // Round Ø21.5 hole, 21 mm thread, 30 cm pigtail to the board.
+    [ "right", "circ", hdmi_hole_d, 0, 140, 24, 0, 0 ],
+    // Pi bay - RIGHT wall: 16 mm rugged metal RGB pushbutton = Pi power button.
+    // Round Ø16 hole, same height as the HDMI hole, placed behind the board.
+    [ "right", "circ", btn_hole_d, 0, 180, 24, 0, 0 ],
     // Router bay - RIGHT wall: USB-C power inlet (-> router power in). VERIFY.
-    [ "right", "rect", 13, 8, 40, 14, 20, 2.6 ],
-    // Router bay - FRONT wall: power-button access. VERIFY position.
-    [ "front", "circ", 6, 0, 120, 30, 0, 0 ],
+    [ "right", "rect", 13, 8, 40, 7, 23.5, 2.6 ],
 ];
 
 // ============================================================================
@@ -203,17 +223,54 @@ module router_ledge() {
     z_top = floor_th + cradle_z;
     translate([0,0,z_top - ledge_t])
         difference() {
-            translate([wall, router_cav_y0, 0])
+            translate([rt_x0, router_cav_y0, 0])
                 cube([pocket_x, pocket_y, ledge_t]);
-            translate([wall+ledge_w, router_cav_y0+ledge_w, -0.5])
+            translate([rt_x0+ledge_w, router_cav_y0+ledge_w, -0.5])
                 cube([pocket_x-2*ledge_w, pocket_y-2*ledge_w, ledge_t+1]);
         }
 }
 
+// Tapered pillars under the cradle rim: wide where they meet the ledge, narrow
+// at the floor so they bridge less and reduce stringing on the print.
+module ledge_support(cx, cy, top_w, top_d) {
+    z0 = floor_th;
+    z1 = floor_th + cradle_z - ledge_t;
+    hull() {
+        translate([cx, cy, z0])        cube([sup_foot, sup_foot, 0.1], center=true);
+        translate([cx, cy, z1 - 0.05]) cube([top_w, top_d, 0.1], center=true);
+    }
+}
+module router_supports() {
+    y_front = router_cav_y0 + ledge_w/2;
+    y_back  = router_cav_y1 - ledge_w/2;
+    x_right = rt_x0 + pocket_x - ledge_w/2;
+    for (f = [0.18, 0.38, 0.58, 0.78]) {
+        cx = rt_x0 + pocket_x*f;
+        ledge_support(cx, y_front, sup_top_w, ledge_w);
+        ledge_support(cx, y_back,  sup_top_w, ledge_w);
+    }
+    for (g = [0.3, 0.7]) {
+        cy = router_cav_y0 + pocket_y*g;
+        ledge_support(x_right, cy, ledge_w, sup_top_w);
+    }
+}
+
+// Corner stops on the router's LEFT (dongle) end. Enlarging the bay removed the
+// old left cavity wall, so these retain the router in X while leaving the centre
+// of the left edge open for the right-angle USB dongle.
+module router_left_stops() {
+    tab_h = cradle_z + rt_thk*0.4;
+    x0    = rt_x0 + rt_clr - wall - 0.3;
+    for (yc = [router_cav_y0 + ledge_w, router_cav_y1 - ledge_w - 10])
+        translate([x0, yc, floor_th]) cube([wall, 10, tab_h]);
+}
+
 // Central full-height passage through the divider for internal wiring.
 module divider_passage() {
-    translate([wall+pass_margin, divider_y0-1, floor_th])
-        cube([IX-2*pass_margin, wall+2, inner_h+1]);
+    x0 = open_left ? wall - 1 : wall + pass_margin;
+    x1 = wall + IX - pass_margin;
+    translate([x0, divider_y0-1, floor_th])
+        cube([x1 - x0, wall+2, inner_h+1]);
 }
 
 module vent_row(length, z0) {
@@ -234,17 +291,27 @@ module snap_bump() {
 }
 
 // Raised label on the base front wall (above vents, clear of the button).
+// Three stacked lines: version, author, contact.
 module base_label() {
-    translate([wall + IX/2 - 12, 0, 30]) rotate([90, 0, 0])
-        translate([0, 0, -0.1]) linear_extrude(emboss_h + 0.1)
-            text(label, size=wall_txt_sz, halign="center", valign="center");
+    s = wall_txt_sz;
+    translate([wall + IX/2, 0, 30]) rotate([90, 0, 0])
+        translate([0, 0, -0.1]) linear_extrude(emboss_h + 0.1) {
+            translate([0,  s*1.05, 0]) text(label,   size=s,      halign="center", valign="center");
+            translate([0,  0,      0]) text(author,  size=s*0.72, halign="center", valign="center");
+            translate([0, -s*0.9,  0]) text(contact, size=s*0.6,  halign="center", valign="center");
+        }
 }
 
 // Raised label on the lid top, between the screen window and the fan.
+// Three stacked lines: version, author, contact.
 module lid_label() {
+    s = lid_txt_sz;
     translate([wall + IX/2, 90, roof_th - 0.1])
-        linear_extrude(emboss_h + 0.1)
-            text(label, size=lid_txt_sz, halign="center", valign="center");
+        linear_extrude(emboss_h + 0.1) {
+            translate([0,  s*1.05, 0]) text(label,   size=s,      halign="center", valign="center");
+            translate([0,  0,      0]) text(author,  size=s*0.72, halign="center", valign="center");
+            translate([0, -s*0.9,  0]) text(contact, size=s*0.6,  halign="center", valign="center");
+        }
 }
 
 // ============================================================================
@@ -264,6 +331,8 @@ module base() {
             }
             pi_standoffs();
             router_ledge();
+            router_supports();
+            router_left_stops();
         }
         all_panels();
         pi_standoff_holes();
@@ -339,7 +408,7 @@ module board_ghost() {
         cube([board_x, board_y, board_th]);
 }
 module router_ghost() {
-    translate([wall + rt_clr, router_cav_y0 + rt_clr, floor_th + cradle_z])
+    translate([rt_x0 + rt_clr, router_cav_y0 + rt_clr, floor_th + cradle_z])
         cube([rt_len, rt_wid, rt_thk]);
 }
 
