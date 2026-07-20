@@ -48,7 +48,7 @@ cbore_h    = 2.6;
 rt_len = 157;       // along X
 rt_wid = 75;        // along Y
 rt_thk = 22.8;      // Z
-rt_clr = 1.5;       // fit clearance around the body
+rt_clr = 0.75;      // fit clearance around the body (snug: walls hug the router)
 ledge_w = 4;        // cradle ledge that the router rests on
 ledge_t = 2.4;      // ledge thickness
 dongle_gap = 10.5;  // clearance on router's LEFT end for a right-angle USB dongle
@@ -98,7 +98,7 @@ hdmi_hole_d = 21.5;  // panel-mount waterproof HDMI bulkhead (21 mm thread, cut 
 btn_hole_d  = 16;    // 16 mm rugged metal RGB pushbutton (Adafruit 3350) - Pi power
 
 /* [Emboss label] */
-label       = "Telephone Booth Case v.0.2";
+label       = "Telephone Booth Case v.0.3";
 author      = "David Jensenius";
 contact     = "david@jensenius.com";
 emboss_h    = 0.8;  // raised height
@@ -255,6 +255,20 @@ module router_supports() {
     }
 }
 
+// Straight vertical stabilizer columns at the router's mid-span, sitting between
+// the 2nd (f=0.38) and 3rd (f=0.58) cradle supports on both the front and back
+// (divider) rims. Unlike the tapered supports these are full-section verticals
+// that prop the middle of the 157 mm router so it can't sag or rock in place.
+module router_stabilizers() {
+    z_h    = cradle_z - ledge_t;            // floor up to the ledge underside
+    stab_w = 6;                             // along X
+    stab_d = ledge_w;                       // along Y (matches the rim ledge)
+    cx     = rt_x0 + pocket_x*0.48;         // midway between supports #2 and #3
+    for (cy = [router_cav_y0 + ledge_w/2, router_cav_y1 - ledge_w/2])
+        translate([cx - stab_w/2, cy - stab_d/2, floor_th])
+            cube([stab_w, stab_d, z_h]);
+}
+
 // Corner stops on the router's LEFT (dongle) end. Enlarging the bay removed the
 // old left cavity wall, so these retain the router in X while leaving the centre
 // of the left edge open for the right-angle USB dongle.
@@ -332,6 +346,7 @@ module base() {
             pi_standoffs();
             router_ledge();
             router_supports();
+            router_stabilizers();
             router_left_stops();
         }
         all_panels();
