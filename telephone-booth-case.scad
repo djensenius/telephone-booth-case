@@ -339,9 +339,11 @@ module vent_row(length, z0) {
     n = floor((length - vent_gap) / (vent_slot_w + vent_gap));
     span = n*(vent_slot_w+vent_gap) - vent_gap;
     start = (length - span)/2;
+    // Cube is centred in Y so the row straddles the wall centreline and cuts
+    // clean through, regardless of which wall it is placed on.
     for (i=[0:n-1])
-        translate([start + i*(vent_slot_w+vent_gap), 0, z0])
-            cube([vent_slot_w, wall*3, vent_slot_h]);
+        translate([start + i*(vent_slot_w+vent_gap) + vent_slot_w/2, 0, z0 + vent_slot_h/2])
+            cube([vent_slot_w, wall*3, vent_slot_h], center=true);
 }
 
 module snap_bump() {
@@ -403,8 +405,8 @@ module base() {
         pi_standoff_holes();
         divider_passage();
         // ventilation: Pi back wall + router front wall (low rows)
-        translate([0, OUTY - wall, floor_th+4]) vent_row(OUTX, 0);
-        translate([0, wall,        floor_th+4]) vent_row(OUTX, 0);
+        translate([0, OUTY - wall/2, floor_th+4]) vent_row(OUTX, 0);
+        translate([0, wall/2,        floor_th+4]) vent_row(OUTX, 0);
     }
     // snap catches on front & back walls
     for (cx = snap_positions) {
