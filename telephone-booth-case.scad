@@ -146,6 +146,12 @@ board_absy = pi_cav_y0 + pi_front;
 // ALL reclaimed width lands as dongle clearance on its LEFT (min-X) end.
 rt_x0 = wall + IX - pocket_x;
 
+// Router front-face rest Y. The bay is hollowed full width, so the router is
+// located in Y only by the ledge + the mid-span stabilizer fins. It rests a
+// touch further back than rt_clr so the front fin has real thickness.
+rt_front = router_cav_y0 + 1.75;
+fin_play = 0.2;   // clearance between each stabilizer fin and the router face
+
 // Divider cable passage (central, full height) for router<->Pi wiring.
 // Router is retained by the pocket walls + cradle rim on its other 3 sides,
 // so the divider only needs short end stubs; a wide passage gives the
@@ -303,18 +309,22 @@ module router_supports() {
     }
 }
 
-// Straight vertical stabilizer columns at the router's mid-span, sitting between
-// the 2nd (f=0.38) and 3rd (f=0.58) cradle supports on both the front and back
-// (divider) rims. Unlike the tapered supports these are full-section verticals
-// that prop the middle of the 157 mm router so it can't sag or rock in place.
+// Full-height stabilizer fins at the router's mid-span. The bay is hollowed the
+// full width to the lid, so the router otherwise floats in Y with ~3 mm of play
+// and rocks. These two fins form a slot the router drops into: they pin it front
+// and back and brace the case floor-to-lid so nothing bounces. The router rests
+// against their inner faces (it sits BESIDE the front fin, not on it).
 module router_stabilizers() {
-    z_h    = cradle_z - ledge_t;            // floor up to the ledge underside
-    stab_w = 6;                             // along X
-    stab_d = ledge_w;                       // along Y (matches the rim ledge)
+    stab_w = 8;                             // fin length along X
     cx     = rt_x0 + pocket_x*0.48;         // midway between supports #2 and #3
-    for (cy = [router_cav_y0 + ledge_w/2, router_cav_y1 - ledge_w/2])
-        translate([cx - stab_w/2, cy - stab_d/2, floor_th])
-            cube([stab_w, stab_d, z_h]);
+    front_y1 = rt_front - fin_play;         // front fin inner face
+    back_y0  = rt_front + rt_wid + fin_play;// back fin inner face
+    // front fin: front wall inner face -> router front face
+    translate([cx - stab_w/2, router_cav_y0, floor_th])
+        cube([stab_w, front_y1 - router_cav_y0, inner_h]);
+    // back fin: router back face -> divider front face
+    translate([cx - stab_w/2, back_y0, floor_th])
+        cube([stab_w, router_cav_y1 - back_y0, inner_h]);
 }
 
 // Corner stops on the router's LEFT (dongle) end. Enlarging the bay removed the
@@ -476,7 +486,7 @@ module board_ghost() {
         cube([board_x, board_y, board_th]);
 }
 module router_ghost() {
-    translate([rt_x0 + rt_clr, router_cav_y0 + rt_clr, floor_th + cradle_z])
+    translate([rt_x0 + rt_clr, rt_front, floor_th + cradle_z])
         cube([rt_len, rt_wid, rt_thk]);
 }
 
