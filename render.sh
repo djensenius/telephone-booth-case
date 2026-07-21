@@ -31,6 +31,8 @@ shot base  perspective "45,-180,130,0,0,0"   1100,850  5_interior_router_end.png
 shot base  perspective "-200,-130,150,0,0,0" 1100,850  6_interior_dongle_end.png
 shot base  perspective "120,120,170,0,0,0"   1100,850  7_interior_rear.png
 shot base  ortho "0,-600,0,0,0,0"            1100,480  label_base.png
+shot base  ortho "-600,110,20,0,110,20"      1100,480  label_ports_left.png
+shot base  ortho "600,42,20,0,42,20"         1100,480  label_ports_right.png
 shot lid   ortho "0,-1,600,0,0,0"            1000,1000 label_lid.png
 
 echo "done"

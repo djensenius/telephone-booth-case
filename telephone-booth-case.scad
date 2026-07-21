@@ -391,6 +391,55 @@ module lid_label() {
         }
 }
 
+// ----------------------------------------------------------------------------
+// Engraved port symbols (drawn as geometry - the stock font lacks these glyphs)
+// ----------------------------------------------------------------------------
+// IEC power symbol: broken ring + vertical bar.
+module sym_power(sz=7) {
+    R = sz/2; t = sz*0.15;
+    union() {
+        difference() {
+            difference() { circle(r=R, $fn=72); circle(r=R-t, $fn=72); }
+            translate([0, R]) square([t*1.9, t*2.6], center=true);   // gap at top
+        }
+        translate([0, R*0.35]) square([t, R*1.3], center=true);      // vertical bar
+    }
+}
+// Telephone handset (audio): two rounded ear/mouth ends on a curved body.
+module sym_handset(sz=8) {
+    rotate(-40) union() {
+        hull() { translate([-sz*0.42,0]) circle(d=sz*0.26,$fn=36); translate([-sz*0.15,-sz*0.17]) circle(d=sz*0.20,$fn=36); }
+        hull() { translate([-sz*0.15,-sz*0.17]) circle(d=sz*0.20,$fn=36); translate([ sz*0.15,-sz*0.17]) circle(d=sz*0.20,$fn=36); }
+        hull() { translate([ sz*0.15,-sz*0.17]) circle(d=sz*0.20,$fn=36); translate([ sz*0.42,0]) circle(d=sz*0.26,$fn=36); }
+        translate([-sz*0.42,0]) circle(d=sz*0.42,$fn=44);
+        translate([ sz*0.42,0]) circle(d=sz*0.42,$fn=44);
+    }
+}
+// Rotary dial: outer ring, ten finger holes, centre hub.
+module sym_dial(sz=8) {
+    R = sz/2;
+    union() {
+        difference() { circle(r=R, $fn=72); circle(r=R*0.80, $fn=72); }
+        for (a=[0:36:359]) rotate(a) translate([R*0.58,0]) circle(d=sz*0.15, $fn=28);
+        circle(d=sz*0.17, $fn=28);
+    }
+}
+// Place a 2D symbol engraved (recessed deboss_d) into a wall's exterior face,
+// using the same (along, up) convention as panel_holes.
+module wall_engrave(w_, along, up) {
+    if (w_ == "left")
+        translate([-0.1, wall+along, floor_th+up]) rotate([90,0,90])
+            linear_extrude(deboss_d+0.1) children();
+    else if (w_ == "right")
+        translate([OUTX+0.1, wall+along, floor_th+up]) rotate([90,0,-90])
+            linear_extrude(deboss_d+0.1) children();
+}
+module port_labels() {
+    wall_engrave("right", 40, 17)  sym_power(8);     // USB-C router power inlet
+    wall_engrave("left", 150, 12)  sym_handset(11);  // audio jack (nearer USB end)
+    wall_engrave("left", 108, 12)  sym_dial(10);     // rotary-dial jack (nearer divider)
+}
+
 // ============================================================================
 // BASE
 // ============================================================================
@@ -416,6 +465,7 @@ module base() {
         all_panels();
         pi_standoff_holes();
         divider_passage();
+        port_labels();
         // ventilation: Pi back wall + router front wall (low rows)
         translate([0, OUTY - wall/2, floor_th+4]) vent_row(OUTX, 0);
         translate([0, wall/2,        floor_th+4]) vent_row(OUTX, 0);
