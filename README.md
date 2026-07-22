@@ -32,7 +32,7 @@ parts linked below — swapping a part may require adjusting the model.
 | Noctua NF-A4x20 40 mm fan | Lid | ⌀37 mm grille, 32 mm screws | [noctua.at](https://noctua.at/en/nf-a4x20-flx) |
 | Round USB 3.0 panel-mount bulkhead, 86-type (×2) | Back wall (→ Pi USB-A) | ⌀22.6 mm round | [Amazon.ca](https://www.amazon.ca/dp/B0F2MW7XXZ) |
 | USB-C 3.1 panel-mount coupler | Router-bay right wall (power inlet) | 13 × 8 mm, 23.5 mm screws | [Amazon.ca](https://www.amazon.ca/dp/B0GF22WM9T) |
-| HDMI female → micro-HDMI panel-mount waterproof bulkhead | Right wall (→ Pi micro-HDMI) | ⌀21.5 mm round, 21 mm thread | [Amazon.ca](https://www.amazon.ca/dp/B0CB7HW11X) |
+| HDMI female → micro-HDMI screw-fixing panel-mount bulkhead | Right wall (→ Pi micro-HDMI) | ⌀23 mm round, M22×1.5 nut | [Amazon.ca](https://www.amazon.ca/dp/B0BRFS28JM) |
 | RJ45 CAT6 keystone panel-mount (×2, GPIO) | Left wall | 16.5 × 13.1 mm, 24.5 mm screws | [Amazon.ca](https://www.amazon.ca/dp/B071FNHVXN) |
 | Rugged metal RGB pushbutton, 16 mm (Pi power) | Right wall | ⌀16 mm round | [adafruit.com](https://www.adafruit.com/product/3350) |
 | Right-angle USB-A → USB-A cable, 30 cm | Router USB-out → Pi power | — (internal) | — |
