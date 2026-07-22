@@ -16,7 +16,7 @@ the router's USB-out feeds the Pi via a right-angle USB dongle (the reason the
 router bay has extra room on that end). Two panel RJ45 keystones wire to the 52Pi
 HAT (GPIO).
 
-Current embossed version: **v.0.2**
+Current embossed version: **v.0.5**
 
 ## Components
 
