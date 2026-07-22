@@ -1,7 +1,7 @@
 # Telephone Booth Case
 
 A parametric, 3D-printable enclosure for the [Telephone-Booth](https://github.com/djensenius/Telephone-Booth)
-art project. It is a two-bay, snap-fit case that houses:
+art project. It is a two-bay, screw-down (M3 corner-post) case that houses:
 
 - **Back bay** — Raspberry Pi 4B + 52Pi GPIO Screw Terminal HAT, with a Noctua
   NF-A4x20 fan mounted on the lid.
