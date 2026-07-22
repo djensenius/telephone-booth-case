@@ -95,9 +95,13 @@ grille_gap  = 4.0;
    measured from the OUTER case edge to where the opening starts. The opening runs
    ~133mm along X (33 + opening + 9.8 = OUTX) and 55mm along Y (from the left gap). */
 screen_gap_front = 33;    // gap from the FRONT (min-X) outer edge to the opening
-screen_gap_back  = 9.8;   // gap from the BACK (USB-C / max-X) outer edge to the opening
-screen_gap_left  = 10.5;  // gap from the LEFT (y=0 front) outer edge to the opening
-screen_h         = 55;    // opening size along Y
+screen_gap_back  = 33.04; // gap from the BACK (USB-C / max-X) outer edge - filled in
+                          // 23.24mm more from the top so it frames the LCD, not the
+                          // empty glass above it
+screen_gap_left  = 13.0;  // gap from the LEFT (y=0 front) outer edge - brought in 2.5mm
+                          // from the right (front-wall) side to even the margin
+screen_h         = 52.5;  // opening size along Y (Pi-side edge held fixed, where the
+                          // modem sits flush)
 
 /* [Ventilation] */
 vent_slot_w = 3;
@@ -106,7 +110,7 @@ vent_gap    = 4;
 
 /* [Panel round holes] */
 usb_hole_d  = 22.6;  // 86-type threaded USB bulkhead
-hdmi_hole_d = 21.5;  // panel-mount waterproof HDMI bulkhead (21 mm thread, cut Ø21.5)
+hdmi_hole_d = 23.0;  // screw-fixing HDMI bulkhead, M22x1.5 nut (cut Ø23) - Amazon B0BRFS28JM
 btn_hole_d  = 16.6;  // 16 mm rugged metal RGB pushbutton (Adafruit 3350) - opened up for fit
 
 /* [USB audio adapter cradle - US205] */
@@ -123,7 +127,7 @@ aud_lip    = 0.6;   // inward retention nub at each rib's mouth (light snap)
 aud_x0     = wall + 40;  // cradle left edge - clear of the deep left-wall ethernet keystones
 
 /* [Emboss label] */
-label       = "Telephone Booth Case v.0.4";
+label       = "Telephone Booth Case v.0.5";
 author      = "David Jensenius";
 contact     = "david@jensenius.com";
 emboss_h    = 0.8;  // raised height (base front wall)
@@ -325,7 +329,10 @@ module router_supports() {
         ledge_support(cx, y_front, sup_top_w, ledge_w);
         ledge_support(cx, y_back,  sup_top_w, ledge_w);
     }
-    for (g = [0.3, 0.7]) {
+    // Right-side (max-X) rim supports. Spread well apart from the default 0.3/0.7
+    // so BOTH pillars clear the USB-C power inlet (y 35.9..48.9): the low
+    // right-angle dongle enters under the router here and needs a clear pocket.
+    for (g = [0.2, 0.82]) {
         cy = router_cav_y0 + pocket_y*g;
         ledge_support(x_right, cy, ledge_w, sup_top_w);
     }
@@ -470,6 +477,22 @@ module sym_power(sz=7) {
         translate([0, R*0.35]) square([t, R*1.3], center=true);      // vertical bar
     }
 }
+// Power plug (charging inlet): a plug body with two flat pins and a trailing
+// cord. Marks the USB-C power inlet.
+module sym_plug(sz=8) {
+    bw = sz*0.55;             // plug body width
+    bh = sz*0.42;             // plug body height
+    t  = sz*0.15;             // pin / cord thickness
+    union() {
+        // two pins sticking up out of the plug face
+        for (s=[-1,1]) translate([s*bw*0.26, bh/2 + sz*0.16])
+            square([t, sz*0.32], center=true);
+        // plug body
+        square([bw, bh], center=true);
+        // trailing cord
+        translate([0, -bh/2 - sz*0.18]) square([t, sz*0.36], center=true);
+    }
+}
 // Telephone handset (audio): a classic receiver - a bar that bows up in the
 // middle with an ear-piece / mouth-piece cup flaring down at each end.
 module sym_handset(sz=8) {
@@ -513,8 +536,10 @@ module wall_engrave(w_, along, up) {
             linear_extrude(deboss_d+0.1) children();
 }
 module port_labels() {
-    // Power symbol sits just above the low USB-C inlet (cable enters under the router).
-    wall_engrave("right", 40, 17)  sym_power(8);
+    // Plug symbol above the low USB-C power inlet (cable enters under the router).
+    wall_engrave("right", 40, 17)  sym_plug(8);
+    // IEC power symbol next to the Pi power button.
+    wall_engrave("right", 180, 40) sym_power(8);
     wall_engrave("left", 150, 12)  sym_handset(11);  // audio jack (nearer USB end)
     wall_engrave("left", 108, 12)  sym_dial(10);     // rotary-dial jack (nearer divider)
 }
@@ -573,6 +598,12 @@ module lid() {
         // screen window over the router bay (from the interior router-bay walls)
         translate([scr_x0, scr_y0, -1])
             cube([scr_x1 - scr_x0, scr_y1 - scr_y0, roof_th+2]);
+        // corner screw clearance - drilled through the FULL lid stack (roof + ear).
+        // (lid_ears() only bores the ear; the roof would otherwise back-fill the
+        // lower part, leaving a blind hole the screw can't pass through.)
+        for (p = corner_pts)
+            translate([p[0], p[1], -0.1])
+                cylinder(d=lid_m3_clr, h=ear_h + roof_th + 0.2, $fn=32);
         // engraved label on the top face
         lid_label();
     }
