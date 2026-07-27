@@ -18,10 +18,12 @@
 //
 // Render:  openscad -D 'part="base"' -o base.stl telephone-booth-case.scad
 //          openscad -D 'part="lid"'  -o lid.stl  telephone-booth-case.scad
+//          openscad -D 'part="test"' -o test.stl telephone-booth-case.scad  (RJ45 fit coupon)
+//          openscad -D 'part="test-usbc"' -o test-usbc.stl telephone-booth-case.scad  (USB-C fit coupon)
 // ============================================================================
 
 /* [What to render] */
-part = "both";      // "base" | "lid" | "both" | "check"
+part = "both";      // "base" | "lid" | "both" | "check" | "test" | "test-usbc"
 $fn = 64;
 
 /* [Shell] */
@@ -127,7 +129,7 @@ aud_lip    = 0.6;   // inward retention nub at each rib's mouth (light snap)
 aud_x0     = wall + 40;  // cradle left edge - clear of the deep left-wall ethernet keystones
 
 /* [Emboss label] */
-label       = "Telephone Booth Case v.0.5";
+label       = "Telephone Booth Case v.0.6";
 author      = "David Jensenius";
 contact     = "david@jensenius.com";
 emboss_h    = 0.8;  // raised height (base front wall)
@@ -207,18 +209,47 @@ panel_holes = [
     [ "back",  "circ", usb_hole_d,  0,  50, 26, 0,  0   ],
     [ "back",  "circ", hdmi_hole_d, 0, 110, 26, 0,  0   ],
     // Pi bay - LEFT wall: two RJ45 Ethernet keystones (-> 52Pi HAT GPIO).
-    // Screw-mount breakout: 16.5 x 13.1 mm port window, screws 24.5 mm apart,
-    // body ~37 mm deep into the bay (clears the Pi board; see note below).
+    // Screw-mount breakout: screws measured 25 mm apart (c-c), opened for fit to
+    // 25.75, body ~37 mm deep into the bay (clears the Pi board).
     // Port window raised to 15 mm tall - the 13.1 mm opening printed too tight.
-    [ "left",  "rect", 16.5, 15, 108, 26, 24.5, 3.2 ],
-    [ "left",  "rect", 16.5, 15, 150, 26, 24.5, 3.2 ],
+    // Width opened to 18 mm so cables pass easily: at 25.75 mm centres with the
+    // 3.4 mm screw holes (matched to the USB-C inlet) this still leaves a
+    // ~2.18 mm web before the holes break into the window (min_web = 1.0).
+    [ "left",  "rect", 18, 15, 108, 26, 25.75, 3.4 ],
+    [ "left",  "rect", 18, 15, 150, 26, 25.75, 3.4 ],
     // Pi bay - RIGHT wall: 16 mm rugged metal RGB pushbutton = Pi power button.
     // Round hole opened up slightly (16 -> btn_hole_d) for an easier fit.
     [ "right", "circ", btn_hole_d, 0, 180, 24, 0, 0 ],
-    // Router bay - RIGHT wall: USB-C power inlet (-> router power in). VERIFY.
+    // Router bay - RIGHT wall: USB-C power inlet (-> router power in).
     // Low on the wall so the power cable enters UNDER the router (as in v0.3).
-    [ "right", "rect", 13, 8, 40, 7, 23.5, 2.6 ],
+    // Screws measured 16 mm apart (c-c), opened a touch to 16.5 for fit. That
+    // spacing caps the opening: at 16.5 mm centres with M3 clearance holes the
+    // window can only reach ~11.1 mm wide before the screw holes break in
+    // (min_web = 1.0). Height is free of that limit, so it is opened to 11 mm
+    // for chunky cable overmolds.
+    [ "right", "rect", 10.5, 11, 40, 7, 16.5, 3.4 ],
 ];
+
+// Minimum material to leave between a panel cutout and its flanking screw
+// holes. The two are specified independently, so a window that is too wide (or
+// screws that sit too close) silently merges them and the render still looks
+// fine on screen - it only shows up as a blown-out panel after a print. Guard
+// it here instead. 1.0 mm is about 2-3 perimeters at a 0.4 mm nozzle; treat it
+// as the hard floor, not a target.
+min_web = 1.0;
+
+module check_panel_holes() {
+    for (i = [0 : len(panel_holes) - 1])
+        let (h = panel_holes[i], a = h[2], ss = h[6], sd = h[7],
+             web = ss/2 - sd/2 - a/2)
+            assert(ss == 0 || web >= min_web,
+                str("panel_holes[", i, "] (", h[0], " wall): only ", web,
+                    " mm of material between the ", a, " mm window and its ",
+                    sd, " mm screw holes at ", ss, " mm centres - need >= ",
+                    min_web, " mm. Narrow the window, use smaller screws, or ",
+                    "move the screws off the panel onto internal bosses."));
+}
+check_panel_holes();
 
 // ============================================================================
 // Helper modules
@@ -643,9 +674,31 @@ module stack_ghost() {
 }
 
 // ============================================================================
+// Fit-test coupon: a small flat plate carrying just one panel cutout (its port
+// window + screw holes). Prints in seconds so a panel-mount part's screw
+// spacing / hole size can be checked without printing the whole case. Pulls its
+// dimensions straight from the real cutout spec so it stays in sync.
+// ============================================================================
+module test_coupon(spec) {
+    a  = spec[2]; b = spec[3];          // port window: width x height
+    ss = spec[6]; sd = spec[7];         // screw spacing (c-c) / hole dia
+    margin = 6;
+    px = max(a, ss + sd) + 2*margin;    // coupon width  (X)
+    py = b              + 2*margin;      // coupon height (Y)
+    difference() {
+        translate([-px/2, -py/2, 0]) cube([px, py, wall]);
+        translate([-a/2, -b/2, -1]) cube([a, b, wall+2]);          // port window
+        if (ss > 0) for (s=[-1,1]) translate([s*ss/2, 0, -1])
+            cylinder(d=sd, h=wall+2);                              // screw holes
+    }
+}
+
+// ============================================================================
 // Render selector
 // ============================================================================
 if (part == "base") base();
 else if (part == "lid") lid();   // prints flat, top face up (text reads correctly)
 else if (part == "check") { base(); %board_ghost(); %stack_ghost(); %router_ghost(); %fan_ghost(); }
+else if (part == "test")      test_coupon(panel_holes[2]);   // RJ45 keystone fit coupon
+else if (part == "test-usbc") test_coupon(panel_holes[5]);   // USB-C inlet fit coupon
 else { base(); translate([0,0,base_h]) lid(); }
