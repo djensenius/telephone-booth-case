@@ -37,8 +37,10 @@ board_y    = 56;    // along Y
 board_th   = 1.4;
 standoff_h = 6;     // lift PCB off floor
 stack_h    = 28;    // PCB top -> top of 52Pi HAT + screw terminals (verified clearance)
-roof_gap   = 23;    // stack top -> roof: sized so a 20 mm Noctua NF-A4x20 can hang
-                    // UNDER the lid over the Pi bay with ~3 mm clearance to the HAT
+roof_gap   = 33;    // stack top -> roof: sized so a 20 mm Noctua NF-A4x20 can hang
+                    // UNDER the lid over the Pi bay with ~3 mm clearance to the HAT.
+                    // v0.6: +10 mm (was 23) to make the whole box 10 mm taller -
+                    // extra headroom above the Pi stack and below the router.
 hole_dx    = 58;    // Pi mounting-hole rectangle (verified)
 hole_dy    = 49;
 hole_inset = 3.5;
@@ -65,13 +67,35 @@ sup_top_w = 12;     // support cap length along the rim (meets the ledge)
 sup_foot  = 3;      // tapered support foot at the floor (less bridging -> less stringing)
 
 /* [Bay layout] */
+// v0.6: box enlarged to ~fill the Bambu P2S bed (256x256 max print). The router
+// (modem) bay is UNCHANGED - it stays pinned to the front + right walls, so its
+// placement is identical to v0.5. All the extra room lands on the Pi side: the
+// width grows (Pi is centred, so it gains clearance on both sides) and pi_back
+// grows (deeper rear cable zone behind the Pi, where the power lead enters).
+// Lid screw-post geometry (defined here, ahead of [Bay layout], because the
+// target-footprint math below needs it; used again in the corner-post section).
+post_r = 4.0;         // corner post radius (external boss merged into the corner)
+pin    = 3.0;         // inboard offset for the three roomy corners
+box_x_target = 250;   // desired TRUE outer width  (X), lid posts INCLUDED
+box_y_target = 250;   // desired TRUE outer depth  (Y), lid posts INCLUDED
+// The M3 lid screw posts bulge past the nominal shell: ~ (post_r - pin) on the
+// three inboard corners, and the front-right post (biased forward, clear of the
+// router) sticks out further. Bake those overhangs in so box_*_target is the
+// real printed footprint that must fit the bed - not the nominal shell size.
+lid_bulge_side = post_r - pin;              // outward bulge, inboard corners (~1)
+lid_bulge_fr   = post_r + (post_r - wall);  // forward stick of the front-right post (~5.6)
 pi_front  = 12;     // board gap toward the divider
-pi_back   = 65;     // deep zone behind board: right-angle USB-A plugs + flat-cable routing
 pocket_x  = rt_len + 2*rt_clr;         // snug router pocket X (walls hug the body)
 pocket_y  = rt_wid + 2*rt_clr;         // snug router pocket Y
 router_bay_x = rt_len + 2*case_clr;    // front-bay footprint X (fixed via case_clr)
 router_bay_y = rt_wid + 2*case_clr;    // front-bay footprint Y (fixed via case_clr)
-IX        = max(router_bay_x + dongle_gap, board_x + 40);   // box width - fixed, NOT tied to the snug pocket
+// Nominal shell size, backed off so the post bulges land ON the target footprint.
+OUTX_target = box_x_target - 2*lid_bulge_side;
+OUTY_target = box_y_target - lid_bulge_side - lid_bulge_fr;
+IX        = max(router_bay_x + dongle_gap, board_x + 40, OUTX_target - 2*wall);   // box width
+// pi_back is derived so the OUTER depth hits OUTY_target; it is the rear cable
+// zone behind the Pi, so growing the box deepens exactly that space.
+pi_back   = OUTY_target - 2*wall - (wall + router_bay_y + wall) - (board_y + pi_front);
 pi_bay_y  = board_y + pi_front + pi_back;  // Pi bay depth
 
 inner_h = standoff_h + board_th + stack_h + roof_gap;   // cavity height
@@ -79,8 +103,8 @@ base_h  = floor_th + inner_h;
 cradle_z = inner_h - rt_thk;            // ledge rest height above floor
 
 /* [Screw-down lid] - 4x M3 into external corner posts (secure, and no snap-fit
-   parts to jam; the packed interior leaves no room for internal front posts). */
-post_r      = 4.0;   // corner post radius (external boss merged into the corner)
+   parts to jam; the packed interior leaves no room for internal front posts).
+   NB: post_r is defined earlier (Bay layout) - the footprint math needs it. */
 lid_m3_clr  = 3.4;   // M3 clearance hole in the lid ear
 m3_pilot    = 2.5;   // pilot hole in the base post for an M3 self-tapping screw
 pilot_depth = 16;    // how deep the pilot bores down from the top of the post
@@ -177,7 +201,7 @@ open_left   = true; // remove the divider on the LEFT end so the router ethernet
 // the Ø(2*post_r) column merges solidly into BOTH walls (integral, ~1mm outward
 // bulge). The router fills the front-right inner corner, so FR is biased forward
 // (in front of the router's front face) and welds to the front + right walls.
-pin  = 3.0;                 // inboard offset for the three roomy corners
+// NB: pin is defined earlier (Bay layout) - the footprint math needs it.
 fr_y = -(post_r - wall);    // FR column centre Y - keeps its body clear of the router front
 corner_pts = [ [pin,        pin],           // front-left  (dongle end)
                [OUTX - pin,  fr_y],          // front-right (USB-C end / router)
@@ -191,8 +215,12 @@ fan_cy = board_absy + board_y/2;
 
 // Screen window rectangle. The long (~133mm) dimension runs along X between the
 // front/back outer-edge gaps; the 55mm dimension runs along Y from the left gap.
-scr_x0 = screen_gap_front;          // opening start, from the min-X outer face
+// v0.6: the opening's X length is now FIXED and anchored to the max-X (router)
+// wall so it keeps framing the router LCD when the box widens - otherwise the
+// left edge (referenced to the min-X wall) would stretch out over bare floor.
+screen_x_len = 109.26;              // opening length along X (frames the router LCD)
 scr_x1 = OUTX - screen_gap_back;    // opening end, from the max-X outer face
+scr_x0 = scr_x1 - screen_x_len;     // opening start, held a fixed distance from max-X
 scr_y0 = screen_gap_left;           // opening start, from the y=0 outer face
 scr_y1 = scr_y0 + screen_h;
 
@@ -206,8 +234,10 @@ panel_holes = [
     // Pi bay - BACK wall: ONE round USB 3.0 bulkhead (-> Pi USB-A). The second
     // USB was dropped (that Pi port now drives the USB audio adapter internally),
     // and the HDMI bulkhead was relocated here to take its place.
-    [ "back",  "circ", usb_hole_d,  0,  50, 26, 0,  0   ],
-    [ "back",  "circ", hdmi_hole_d, 0, 110, 26, 0,  0   ],
+    // along is referenced to the Pi board (which recentres as the box widens) so
+    // these stay lined up with the Pi's ports: originally X=50 and X=110.
+    [ "back",  "circ", usb_hole_d,  0,  (IX-board_x)/2 +  7.25, 26, 0,  0   ],
+    [ "back",  "circ", hdmi_hole_d, 0,  (IX-board_x)/2 + 67.25, 26, 0,  0   ],
     // Pi bay - LEFT wall: two RJ45 Ethernet keystones (-> 52Pi HAT GPIO).
     // Screw-mount breakout: screws measured 25 mm apart (c-c), opened for fit to
     // 25.75, body ~37 mm deep into the bay (clears the Pi board).
