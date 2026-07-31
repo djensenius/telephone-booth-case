@@ -155,6 +155,9 @@ aud_lip    = 0.6;   // inward retention nub at each rib's mouth (light snap)
 
 /* [Emboss label] */
 label       = "Telephone Booth Case v.0.7";
+// v0.7.1 changed the LID only (fan + label moved toward the +X edge), so the
+// already-printed base keeps its v.0.7 emboss and only the lid gets the bump.
+lid_label_txt = "Telephone Booth Case v.0.7.1";
 author      = "David Jensenius";
 contact     = "david@jensenius.com";
 emboss_h    = 0.8;  // raised height (base front wall)
@@ -223,9 +226,10 @@ corner_pts = [ [pin,        pin],           // front-left  (dongle end)
                [pin,         OUTY - pin],    // back-left   (Pi bay)
                [OUTX - pin,  OUTY - pin] ];  // back-right  (Pi bay)
 
-// Fan centre over the Pi board (not the bay) so it keeps cooling the SoC
-// regardless of how deep the rear cable zone is.
-fan_cx = wall + IX/2;
+// Fan centre. v0.7.1 shifts the lid fan toward the +X edge; Y stays centred on
+// the Pi board.
+fan_shift_x = 76;
+fan_cx = wall + IX/2 + fan_shift_x;
 fan_cy = board_absy + board_y/2;
 
 // Screen window rectangle. The long (~133mm) dimension runs along X between the
@@ -523,19 +527,17 @@ module base_label() {
 
 // Recessed (engraved) label on the lid top, turned 90 degrees so it reads along
 // the length (+Y). Debossed so the top prints cleanly; subtracted in lid()'s
-// difference() block. Pushed UP toward the back edge (a clear gap above the fan)
-// and centred on the lid width.
+// difference() block. Positioned close to the +X edge.
 module lid_label() {
     s = lid_txt_sz;
-    // Placed per the user's markup: along the +X (USB-C) edge, centred on the fan in
-    // Y. Rotated so it reads left-to-right when the lid is viewed in landscape with the
-    // front bay / screen to the right. Title line sits nearest the edge.
-    lx = 162;          // block centre in X (title ~169, ~4mm off the +X inner wall)
-    ly = fan_cy;       // centred on the fan along Y
+    // Rotated so it reads left-to-right in landscape with the front bay /
+    // screen to the right. The title line sits nearest the +X edge.
+    lx = 231;
+    ly = fan_cy;
     translate([lx, ly, roof_th - deboss_d])
         rotate([0, 0, -90])
         linear_extrude(deboss_d + 0.1) {
-            translate([0,  s*1.2, 0]) text(label,   size=s,      halign="center", valign="center");
+            translate([0,  s*1.2, 0]) text(lid_label_txt, size=s,      halign="center", valign="center");
             translate([0,  0,     0]) text(author,  size=s*0.88, halign="center", valign="center");
             translate([0, -s*1.1, 0]) text(contact, size=s*0.80, halign="center", valign="center");
         }
