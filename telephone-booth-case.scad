@@ -150,10 +150,14 @@ aud_floor  = 2;     // material below the body
 aud_wall   = 2.4;   // cradle side-wall thickness
 aud_rib    = 3;     // rib thickness along X
 aud_lip    = 0.6;   // inward retention nub at each rib's mouth (light snap)
-aud_x0     = wall + 40;  // cradle left edge - clear of the deep left-wall ethernet keystones
+// v0.7: aud_x0 (cradle left edge) is derived below - the cradle is now centred
+// under the HDMI bulkhead instead of the USB one.
 
 /* [Emboss label] */
-label       = "Telephone Booth Case v.0.6";
+label       = "Telephone Booth Case v.0.7";
+// v0.7.1 changed the LID only (fan + label moved toward the +X edge), so the
+// already-printed base keeps its v.0.7 emboss and only the lid gets the bump.
+lid_label_txt = "Telephone Booth Case v.0.7.1";
 author      = "David Jensenius";
 contact     = "david@jensenius.com";
 emboss_h    = 0.8;  // raised height (base front wall)
@@ -177,6 +181,20 @@ pi_cav_y1     = pi_cav_y0 + pi_bay_y;    // Pi cavity back
 
 board_absx = wall + (IX - board_x)/2;
 board_absy = pi_cav_y0 + pi_front;
+
+// Back-wall bulkhead offsets, referenced to the Pi board's left edge so they stay
+// lined up with the Pi's own ports as the box widens.
+usb_along_off  =  7.25;
+hdmi_along_off = 67.25;
+
+// v0.7: panel cutouts in the Pi bay are centred on the assembled box height.
+// floor_th == roof_th, so the mid-height of the closed box is exactly inner_h/2
+// above the base floor.
+panel_up = inner_h/2;
+
+// USB audio adapter cradle, centred under the HDMI bulkhead (v0.7 - it used to
+// sit under the USB one, further toward the network-hole end).
+aud_x0 = board_absx + hdmi_along_off - aud_len/2;   // cradle left edge
 
 // Router pocket left origin: the router is pushed hard against the RIGHT wall so
 // ALL reclaimed width lands as dongle clearance on its LEFT (min-X) end.
@@ -208,9 +226,10 @@ corner_pts = [ [pin,        pin],           // front-left  (dongle end)
                [pin,         OUTY - pin],    // back-left   (Pi bay)
                [OUTX - pin,  OUTY - pin] ];  // back-right  (Pi bay)
 
-// Fan centre over the Pi board (not the bay) so it keeps cooling the SoC
-// regardless of how deep the rear cable zone is.
-fan_cx = wall + IX/2;
+// Fan centre. v0.7.1 shifts the lid fan toward the +X edge; Y stays centred on
+// the Pi board.
+fan_shift_x = 76;
+fan_cx = wall + IX/2 + fan_shift_x;
 fan_cy = board_absy + board_y/2;
 
 // Screen window rectangle. The long (~133mm) dimension runs along X between the
@@ -236,8 +255,8 @@ panel_holes = [
     // and the HDMI bulkhead was relocated here to take its place.
     // along is referenced to the Pi board (which recentres as the box widens) so
     // these stay lined up with the Pi's ports: originally X=50 and X=110.
-    [ "back",  "circ", usb_hole_d,  0,  (IX-board_x)/2 +  7.25, 26, 0,  0   ],
-    [ "back",  "circ", hdmi_hole_d, 0,  (IX-board_x)/2 + 67.25, 26, 0,  0   ],
+    [ "back",  "circ", usb_hole_d,  0,  (IX-board_x)/2 + usb_along_off,  panel_up, 0,  0   ],
+    [ "back",  "circ", hdmi_hole_d, 0,  (IX-board_x)/2 + hdmi_along_off, panel_up, 0,  0   ],
     // Pi bay - LEFT wall: two RJ45 Ethernet keystones (-> 52Pi HAT GPIO).
     // Screw-mount breakout: screws measured 25 mm apart (c-c), opened for fit to
     // 25.75, body ~37 mm deep into the bay (clears the Pi board).
@@ -245,11 +264,11 @@ panel_holes = [
     // Width opened to 18 mm so cables pass easily: at 25.75 mm centres with the
     // 3.4 mm screw holes (matched to the USB-C inlet) this still leaves a
     // ~2.18 mm web before the holes break into the window (min_web = 1.0).
-    [ "left",  "rect", 18, 15, 108, 26, 25.75, 3.4 ],
-    [ "left",  "rect", 18, 15, 150, 26, 25.75, 3.4 ],
+    [ "left",  "rect", 18, 15, 108, panel_up, 25.75, 3.4 ],
+    [ "left",  "rect", 18, 15, 150, panel_up, 25.75, 3.4 ],
     // Pi bay - RIGHT wall: 16 mm rugged metal RGB pushbutton = Pi power button.
     // Round hole opened up slightly (16 -> btn_hole_d) for an easier fit.
-    [ "right", "circ", btn_hole_d, 0, 180, 24, 0, 0 ],
+    [ "right", "circ", btn_hole_d, 0, 180, panel_up, 0, 0 ],
     // Router bay - RIGHT wall: USB-C power inlet (-> router power in).
     // Low on the wall so the power cable enters UNDER the router (as in v0.3).
     // Screws measured 16 mm apart (c-c), opened a touch to 16.5 for fit. That
@@ -388,7 +407,9 @@ module router_supports() {
     for (f = [0.18, 0.38, 0.58, 0.78]) {
         cx = rt_x0 + pocket_x*f;
         ledge_support(cx, y_front, sup_top_w, ledge_w);
-        ledge_support(cx, y_back,  sup_top_w, ledge_w);
+        // v0.7: the divider-side pillar nearest the network-hole (min-X) end is
+        // omitted - it fouled the cabling that leaves the router at that corner.
+        if (f > 0.18) ledge_support(cx, y_back, sup_top_w, ledge_w);
     }
     // Right-side (max-X) rim supports. Spread well apart from the default 0.3/0.7
     // so BOTH pillars clear the USB-C power inlet (y 35.9..48.9): the low
@@ -506,19 +527,17 @@ module base_label() {
 
 // Recessed (engraved) label on the lid top, turned 90 degrees so it reads along
 // the length (+Y). Debossed so the top prints cleanly; subtracted in lid()'s
-// difference() block. Pushed UP toward the back edge (a clear gap above the fan)
-// and centred on the lid width.
+// difference() block. Positioned close to the +X edge.
 module lid_label() {
     s = lid_txt_sz;
-    // Placed per the user's markup: along the +X (USB-C) edge, centred on the fan in
-    // Y. Rotated so it reads left-to-right when the lid is viewed in landscape with the
-    // front bay / screen to the right. Title line sits nearest the edge.
-    lx = 162;          // block centre in X (title ~169, ~4mm off the +X inner wall)
-    ly = fan_cy;       // centred on the fan along Y
+    // Rotated so it reads left-to-right in landscape with the front bay /
+    // screen to the right. The title line sits nearest the +X edge.
+    lx = 231;
+    ly = fan_cy;
     translate([lx, ly, roof_th - deboss_d])
         rotate([0, 0, -90])
         linear_extrude(deboss_d + 0.1) {
-            translate([0,  s*1.2, 0]) text(label,   size=s,      halign="center", valign="center");
+            translate([0,  s*1.2, 0]) text(lid_label_txt, size=s,      halign="center", valign="center");
             translate([0,  0,     0]) text(author,  size=s*0.88, halign="center", valign="center");
             translate([0, -s*1.1, 0]) text(contact, size=s*0.80, halign="center", valign="center");
         }

@@ -16,7 +16,7 @@ the router's USB-out feeds the Pi via a right-angle USB dongle (the reason the
 router bay has extra room on that end). Two panel RJ45 keystones wire to the 52Pi
 HAT (GPIO).
 
-Current embossed version: **v.0.5**
+Current embossed versions: base **v.0.7**, lid **v.0.7.1**
 
 ## Components
 
@@ -48,7 +48,10 @@ Noctua fan ships with its own self-tapping screws.
 | [`base.stl`](base.stl) | Base | Two-bay body with standoffs, cradle + tapered supports, panel cutouts and vents |
 | [`lid.stl`](lid.stl) | Lid | Snap-fit lid with fan grille and router screen window |
 
-Outer size: **~175.3 × 220.6 × 43.8 mm**. Both parts are embossed with the version,
+Outer size: **250 × 250 × 73.2 mm** (base 70.8 mm + 2.4 mm lid; lid screw posts
+included). The Pi-bay panel cutouts (USB, HDMI, power button, both RJ45 keystones)
+are centred on the assembled box height, and the USB audio adapter cradle sits
+under the HDMI bulkhead. Both parts are embossed with the version,
 author (David Jensenius) and contact (david@jensenius.com).
 
 ## Previews
