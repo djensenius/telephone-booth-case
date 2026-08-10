@@ -1,7 +1,7 @@
 # Telephone Booth Case
 
 A parametric, 3D-printable enclosure for the [Telephone-Booth](https://github.com/djensenius/Telephone-Booth)
-art project. It is a two-bay, screw-down (M3 corner-post) case that houses:
+art project. The default is a two-bay, screw-down (M3 corner-post) case that houses:
 
 - **Back bay** — Raspberry Pi 4B + 52Pi GPIO Screw Terminal HAT, with a Noctua
   NF-A4x20 fan mounted on the lid.
@@ -15,6 +15,10 @@ power cable can reach the Pi. Power path: external USB-C inlet → router power 
 the router's USB-out feeds the Pi via a right-angle USB dongle (the reason the
 router bay has extra room on that end). Two panel RJ45 keystones wire to the 52Pi
 HAT (GPIO).
+
+A compact **non-modem configuration** removes the router cradle, supports,
+divider, and lid window. It keeps the Pi bay, all panel and mounting holes, and
+the 250 mm width while reducing the overall depth from 250 mm to about 180 mm.
 
 Current embossed versions: base **v.0.7**, lid **v.0.7.1**
 
@@ -47,12 +51,18 @@ Noctua fan ships with its own self-tapping screws.
 | [`telephone-booth-case.scad`](telephone-booth-case.scad) | Source | Parametric OpenSCAD model (all dimensions live here) |
 | [`base.stl`](base.stl) | Base | Two-bay body with standoffs, cradle + tapered supports, panel cutouts and vents |
 | [`lid.stl`](lid.stl) | Lid | Snap-fit lid with fan grille and router screen window |
+| [`non-modem-base.stl`](non-modem-base.stl) | Compact base | Open body with Pi standoffs and all panel cutouts |
+| [`non-modem-lid.stl`](non-modem-lid.stl) | Compact lid | Solid lid with the Pi fan grille |
 
 Outer size: **250 × 250 × 73.2 mm** (base 70.8 mm + 2.4 mm lid; lid screw posts
 included). The Pi-bay panel cutouts (USB, HDMI, power button, both RJ45 keystones)
 are centred on the assembled box height, and the USB audio adapter cradle sits
 under the HDMI bulkhead. Both parts are embossed with the version,
 author (David Jensenius) and contact (david@jensenius.com).
+
+The non-modem configuration is approximately **250 × 180 × 73.2 mm**. Its side
+panel cutouts shift forward with the Pi bay; the USB-C power inlet remains near
+the front-right corner.
 
 ## Previews
 
@@ -67,6 +77,9 @@ author (David Jensenius) and contact (david@jensenius.com).
 | ![Interior rear](previews/7_interior_rear.png) | Interior from the rear — cradle supports + left stops |
 | ![Base label](previews/label_base.png) | Embossed label on the base front wall |
 | ![Lid label](previews/label_lid.png) | Embossed label on the lid top |
+| ![Non-modem layout](previews/non-modem-layout-top.png) | Compact layout with Pi ghost |
+| ![Non-modem interior](previews/non-modem-interior.png) | Compact open interior |
+| ![Non-modem assembled](previews/non-modem-assembled.png) | Compact assembled case |
 
 ## Printing / rendering
 
@@ -75,6 +88,8 @@ Requires [OpenSCAD](https://openscad.org/).
 ```sh
 openscad -D 'part="base"' -o base.stl telephone-booth-case.scad
 openscad -D 'part="lid"'  -o lid.stl  telephone-booth-case.scad
+openscad -D 'configuration="non-modem"' -D 'part="base"' -o non-modem-base.stl telephone-booth-case.scad
+openscad -D 'configuration="non-modem"' -D 'part="lid"' -o non-modem-lid.stl telephone-booth-case.scad
 ```
 
 Use `-D 'part="check"'` for a translucent fit check with router and Pi ghosts.
