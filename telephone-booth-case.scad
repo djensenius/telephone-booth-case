@@ -24,7 +24,12 @@
 
 /* [What to render] */
 part = "both";      // "base" | "lid" | "both" | "check" | "test" | "test-usbc"
+configuration = "modem"; // "modem" | "non-modem"
 $fn = 64;
+
+has_modem = configuration == "modem";
+assert(has_modem || configuration == "non-modem",
+    str("Unknown configuration: ", configuration));
 
 /* [Shell] */
 wall     = 2.4;
@@ -77,7 +82,7 @@ sup_foot  = 3;      // tapered support foot at the floor (less bridging -> less 
 post_r = 4.0;         // corner post radius (external boss merged into the corner)
 pin    = 3.0;         // inboard offset for the three roomy corners
 box_x_target = 250;   // desired TRUE outer width  (X), lid posts INCLUDED
-box_y_target = 250;   // desired TRUE outer depth  (Y), lid posts INCLUDED
+box_y_target = has_modem ? 250 : 180; // desired TRUE outer depth, posts included
 // The M3 lid screw posts bulge past the nominal shell: ~ (post_r - pin) on the
 // three inboard corners, and the front-right post (biased forward, clear of the
 // router) sticks out further. Bake those overhangs in so box_*_target is the
@@ -88,7 +93,10 @@ pi_front  = 12;     // board gap toward the divider
 pocket_x  = rt_len + 2*rt_clr;         // snug router pocket X (walls hug the body)
 pocket_y  = rt_wid + 2*rt_clr;         // snug router pocket Y
 router_bay_x = rt_len + 2*case_clr;    // front-bay footprint X (fixed via case_clr)
-router_bay_y = rt_wid + 2*case_clr;    // front-bay footprint Y (fixed via case_clr)
+modem_bay_y = rt_wid + 2*case_clr;     // full front-bay footprint
+// The non-modem configuration removes 90% of the front bay's depth while
+// leaving the Pi bay and its rear cable zone unchanged.
+router_bay_y = has_modem ? modem_bay_y : modem_bay_y * 0.1;
 // Nominal shell size, backed off so the post bulges land ON the target footprint.
 OUTX_target = box_x_target - 2*lid_bulge_side;
 OUTY_target = box_y_target - lid_bulge_side - lid_bulge_fr;
@@ -192,6 +200,15 @@ hdmi_along_off = 67.25;
 // above the base floor.
 panel_up = inner_h/2;
 
+// Side-panel controls track the Pi bay when the front bay is shortened.
+removed_front_depth = modem_bay_y - router_bay_y;
+rj45_dial_along = 108 - removed_front_depth;
+rj45_audio_along = 150 - removed_front_depth;
+power_button_along = 180 - removed_front_depth;
+// The former router power inlet remains available as the compact case's inlet.
+// Move it just behind the front corner so its screw holes retain a full border.
+usbc_power_along = has_modem ? 40 : 16;
+
 // USB audio adapter cradle, centred under the HDMI bulkhead (v0.7 - it used to
 // sit under the USB one, further toward the network-hole end).
 aud_x0 = board_absx + hdmi_along_off - aud_len/2;   // cradle left edge
@@ -264,11 +281,11 @@ panel_holes = [
     // Width opened to 18 mm so cables pass easily: at 25.75 mm centres with the
     // 3.4 mm screw holes (matched to the USB-C inlet) this still leaves a
     // ~2.18 mm web before the holes break into the window (min_web = 1.0).
-    [ "left",  "rect", 18, 15, 108, panel_up, 25.75, 3.4 ],
-    [ "left",  "rect", 18, 15, 150, panel_up, 25.75, 3.4 ],
+    [ "left",  "rect", 18, 15, rj45_dial_along, panel_up, 25.75, 3.4 ],
+    [ "left",  "rect", 18, 15, rj45_audio_along, panel_up, 25.75, 3.4 ],
     // Pi bay - RIGHT wall: 16 mm rugged metal RGB pushbutton = Pi power button.
     // Round hole opened up slightly (16 -> btn_hole_d) for an easier fit.
-    [ "right", "circ", btn_hole_d, 0, 180, panel_up, 0, 0 ],
+    [ "right", "circ", btn_hole_d, 0, power_button_along, panel_up, 0, 0 ],
     // Router bay - RIGHT wall: USB-C power inlet (-> router power in).
     // Low on the wall so the power cable enters UNDER the router (as in v0.3).
     // Screws measured 16 mm apart (c-c), opened a touch to 16.5 for fit. That
@@ -276,7 +293,7 @@ panel_holes = [
     // window can only reach ~11.1 mm wide before the screw holes break in
     // (min_web = 1.0). Height is free of that limit, so it is opened to 11 mm
     // for chunky cable overmolds.
-    [ "right", "rect", 10.5, 11, 40, 7, 16.5, 3.4 ],
+    [ "right", "rect", 10.5, 11, usbc_power_along, 7, 16.5, 3.4 ],
 ];
 
 // Minimum material to leave between a panel cutout and its flanking screw
@@ -617,11 +634,11 @@ module wall_engrave(w_, along, up) {
 }
 module port_labels() {
     // Plug symbol above the low USB-C power inlet (cable enters under the router).
-    wall_engrave("right", 40, 17)  sym_plug(8);
+    wall_engrave("right", usbc_power_along, 17) sym_plug(8);
     // IEC power symbol next to the Pi power button.
-    wall_engrave("right", 180, 40) sym_power(8);
-    wall_engrave("left", 150, 12)  sym_handset(11);  // audio jack (nearer USB end)
-    wall_engrave("left", 108, 12)  sym_dial(10);     // rotary-dial jack (nearer divider)
+    wall_engrave("right", power_button_along, 40) sym_power(8);
+    wall_engrave("left", rj45_audio_along, 12) sym_handset(11);
+    wall_engrave("left", rj45_dial_along, 12) sym_dial(10);
 }
 
 // ============================================================================
@@ -632,18 +649,26 @@ module base() {
         union() {
             difference() {
                 shell_box(OUTX, OUTY, base_h);
-                // router cavity (hollowed to the divider so there's cable room behind the snug pocket)
-                translate([wall, router_cav_y0, floor_th])
-                    cube([IX, router_bay_y, inner_h+1]);
-                // Pi cavity
-                translate([wall, pi_cav_y0, floor_th])
-                    cube([IX, pi_bay_y, inner_h+1]);
+                if (has_modem) {
+                    // Router cavity (hollowed to the divider for cable room).
+                    translate([wall, router_cav_y0, floor_th])
+                        cube([IX, router_bay_y, inner_h+1]);
+                    translate([wall, pi_cav_y0, floor_th])
+                        cube([IX, pi_bay_y, inner_h+1]);
+                } else {
+                    // One open cavity; the Pi remains the same distance from the
+                    // back wall as in the modem configuration.
+                    translate([wall, wall, floor_th])
+                        cube([IX, IY, inner_h+1]);
+                }
             }
             pi_standoffs();
-            router_ledge();
-            router_supports();
-            router_stabilizers();
-            router_left_stops();
+            if (has_modem) {
+                router_ledge();
+                router_supports();
+                router_stabilizers();
+                router_left_stops();
+            }
             audio_cradle();
             corner_posts();
             corner_gussets();
@@ -652,7 +677,7 @@ module base() {
         all_panels();
         pi_standoff_holes();
         corner_post_holes();
-        divider_passage();
+        if (has_modem) divider_passage();
         port_labels();
         // ventilation: Pi back wall + router front wall (low rows)
         translate([0, OUTY - wall/2, floor_th+4]) vent_row(OUTX, 0);
@@ -675,9 +700,9 @@ module lid() {
         for (dx=[-1,1], dy=[-1,1])
             translate([fan_cx + dx*fan_hole_dx/2, fan_cy + dy*fan_hole_dx/2, -1])
                 cylinder(d=fan_screw, h=roof_th+2);
-        // screen window over the router bay (from the interior router-bay walls)
-        translate([scr_x0, scr_y0, -1])
-            cube([scr_x1 - scr_x0, scr_y1 - scr_y0, roof_th+2]);
+        if (has_modem)
+            translate([scr_x0, scr_y0, -1])
+                cube([scr_x1 - scr_x0, scr_y1 - scr_y0, roof_th+2]);
         // corner screw clearance - drilled through the FULL lid stack (roof + ear).
         // (lid_ears() only bores the ear; the roof would otherwise back-fill the
         // lower part, leaving a blind hole the screw can't pass through.)
@@ -747,7 +772,13 @@ module test_coupon(spec) {
 // ============================================================================
 if (part == "base") base();
 else if (part == "lid") lid();   // prints flat, top face up (text reads correctly)
-else if (part == "check") { base(); %board_ghost(); %stack_ghost(); %router_ghost(); %fan_ghost(); }
+else if (part == "check") {
+    base();
+    %board_ghost();
+    %stack_ghost();
+    if (has_modem) %router_ghost();
+    %fan_ghost();
+}
 else if (part == "test")      test_coupon(panel_holes[2]);   // RJ45 keystone fit coupon
 else if (part == "test-usbc") test_coupon(panel_holes[5]);   // USB-C inlet fit coupon
 else { base(); translate([0,0,base_h]) lid(); }

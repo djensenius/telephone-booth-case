@@ -14,6 +14,8 @@ P="previews"
 echo "== STLs =="
 "$OSC" -D 'part="base"' -o base.stl "$SRC"
 "$OSC" -D 'part="lid"'  -o lid.stl  "$SRC"
+"$OSC" -D 'configuration="non-modem"' -D 'part="base"' -o non-modem-base.stl "$SRC"
+"$OSC" -D 'configuration="non-modem"' -D 'part="lid"'  -o non-modem-lid.stl  "$SRC"
 
 echo "== previews =="
 shot() { # part projection "camX,camY,camZ,cx,cy,cz" WxH outfile
@@ -34,5 +36,16 @@ shot base  ortho "0,-600,0,0,0,0"            1100,480  label_base.png
 shot base  ortho "-600,110,20,0,110,20"      1100,480  label_ports_left.png
 shot base  ortho "600,42,20,0,42,20"         1100,480  label_ports_right.png
 shot lid   ortho "0,-1,600,0,0,0"            1000,1000 label_lid.png
+
+shot_variant() { # configuration part projection camera WxH outfile
+    local config="$1" part="$2" proj="$3" cam="$4" size="$5" out="$6"
+    "$OSC" -D "configuration=\"$config\"" -D "part=\"$part\"" \
+        --colorscheme="$CS" --projection="$proj" --camera="$cam" \
+        --viewall --autocenter --imgsize="$size" -o "$P/$out" "$SRC"
+}
+
+shot_variant non-modem check ortho "0,-1,600,0,0,0" 1000,800 non-modem-layout-top.png
+shot_variant non-modem base perspective "-120,-150,220,0,0,0" 1100,850 non-modem-interior.png
+shot_variant non-modem both perspective "-140,-180,170,0,0,0" 1100,850 non-modem-assembled.png
 
 echo "done"
